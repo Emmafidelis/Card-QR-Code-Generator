@@ -1,0 +1,7 @@
+{
+  "name": "Event QR Card Generator",
+  "description": "A professional tool for creating event invitations with embedded QR codes. Upload your card design, generate a custom QR code (for RSVP, location, or details), and overlay it perfectly on your design.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
