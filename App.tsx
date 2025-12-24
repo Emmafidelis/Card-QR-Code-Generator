@@ -4,7 +4,6 @@ import { Upload, Download, QrCode, Sparkles, RefreshCcw, Trash2, Link, MapPin, P
 import QRCanvas from './components/QRCanvas';
 import TemplateRenderer from './components/TemplateRenderer';
 import { EventDetails, QRConfig, CardTemplate, GuestDetails, TicketType } from './types';
-import { analyzeCardImage } from './services/geminiService';
 
 const TEMPLATES: CardTemplate[] = [
   { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate' },
@@ -53,7 +52,6 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<QRConfig>(DEFAULT_CONFIG);
   const [details, setDetails] = useState<EventDetails>(DEFAULT_DETAILS);
   const [guest, setGuest] = useState<GuestDetails>(DEFAULT_GUEST);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<'templates' | 'details' | 'ticket' | 'qr'>('templates');
   
   const templateCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -84,13 +82,6 @@ const App: React.FC = () => {
         setImage(base64);
         setSelectedTemplate(null);
         setActiveTab('qr');
-        setIsAnalyzing(true);
-        const extracted = await analyzeCardImage(base64);
-        if (extracted) {
-          setDetails(prev => ({ ...prev, ...extracted }));
-          if (extracted.locationUrl) setConfig(prev => ({ ...prev, content: extracted.locationUrl, autoFormat: false }));
-        }
-        setIsAnalyzing(false);
       };
       reader.readAsDataURL(file);
     }
