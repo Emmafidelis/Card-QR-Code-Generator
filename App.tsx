@@ -1,9 +1,16 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Upload, Download, QrCode, Sparkles, RefreshCcw, Trash2, Link, MapPin, Phone, Info, Layout, Type as TypeIcon, Calendar, Clock, Shirt, UserCheck, CreditCard, Fingerprint, ShieldCheck, Image as ImageIcon } from 'lucide-react';
+import { 
+  Upload, Download, QrCode, Sparkles, RefreshCcw, Trash2, 
+  MapPin, Layout, Type as TypeIcon, Calendar, Clock, 
+  Shirt, ShieldCheck, Image as ImageIcon, ChevronRight, 
+  CheckCircle2, Star, Zap, Users, Smartphone, ArrowRight,
+  Info, Lock, LogIn, Mail, Instagram, Phone
+} from 'lucide-react';
 import QRCanvas from './components/QRCanvas';
 import TemplateRenderer from './components/TemplateRenderer';
 import { EventDetails, QRConfig, CardTemplate, GuestDetails, TicketType } from './types';
+import { analyzeCardImage } from './services/geminiService';
 
 const TEMPLATES: CardTemplate[] = [
   { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate' },
@@ -13,7 +20,7 @@ const TEMPLATES: CardTemplate[] = [
   { id: 'modern_minimal', name: 'Minimalist Clean', primaryColor: '#2C3E50', secondaryColor: '#34495E', accentColor: '#7F8C8D', fontFamily: 'sans-serif', bgGradient: 'from-slate-50 to-slate-200', hasFlowers: false, borderStyle: 'none' },
 ];
 
-const generateId = () => `TZ-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
+const generateId = () => `AFK-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
 
 const DEFAULT_GUEST: GuestDetails = {
   guestName: "",
@@ -47,11 +54,17 @@ const DEFAULT_DETAILS: EventDetails = {
 };
 
 const App: React.FC = () => {
+  const [view, setView] = useState<'home' | 'editor'>('home');
+  const [isOwner, setIsOwner] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [password, setPassword] = useState('');
+  
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<CardTemplate | null>(null);
   const [config, setConfig] = useState<QRConfig>(DEFAULT_CONFIG);
   const [details, setDetails] = useState<EventDetails>(DEFAULT_DETAILS);
   const [guest, setGuest] = useState<GuestDetails>(DEFAULT_GUEST);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<'templates' | 'details' | 'ticket' | 'qr'>('templates');
   
   const templateCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,7 +74,7 @@ const App: React.FC = () => {
 
   const finalQRContent = useMemo(() => {
     if (!config.autoFormat) return config.content;
-    return `ID:${guest.uniqueId} | T:${guest.ticketType} | N:${guest.guestName || 'GUEST'} | E:${details.names} | V:${details.venue}`;
+    return `AFRIKACHA | ID:${guest.uniqueId} | T:${guest.ticketType} | N:${guest.guestName || 'GUEST'} | E:${details.names}`;
   }, [config.autoFormat, config.content, guest, details]);
 
   useEffect(() => {
@@ -81,104 +94,327 @@ const App: React.FC = () => {
         const base64 = event.target?.result as string;
         setImage(base64);
         setSelectedTemplate(null);
+        setView('editor');
         setActiveTab('qr');
+        setIsAnalyzing(true);
+        const extracted = await analyzeCardImage(base64);
+        if (extracted) {
+          setDetails(prev => ({ ...prev, ...extracted }));
+          if (extracted.locationUrl) setConfig(prev => ({ ...prev, content: extracted.locationUrl, autoFormat: false }));
+        }
+        setIsAnalyzing(false);
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const handleDownload = () => {
+    const canvas = exportCanvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `Afrikacha_Ticket_${guest.uniqueId}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
   const resetAll = () => {
-    if (confirm("Reset application?")) {
+    if (confirm("Clear all data and return to home?")) {
       setImage(null);
       setSelectedTemplate(null);
       setConfig(DEFAULT_CONFIG);
       setDetails(DEFAULT_DETAILS);
       setGuest({ ...DEFAULT_GUEST, uniqueId: generateId() });
-      setActiveTab('templates');
+      setView('home');
       setTemplateImage(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  // Fix: Added handleDownload function to process the high-resolution export canvas and trigger an image download.
-  const handleDownload = () => {
-    const canvas = exportCanvasRef.current;
-    if (!canvas) return;
-    
-    const link = document.createElement('a');
-    link.download = `Ecard_${guest.uniqueId}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  const scrollToId = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
-  const isEditorActive = image || selectedTemplate;
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'Afrikacha2025') { // Hardcoded owner password
+      setIsOwner(true);
+      setShowLogin(false);
+      setView('editor');
+    } else {
+      alert('Unauthorized access attempt.');
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col selection:bg-orange-500/30">
-      <header className="border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-rose-600 rounded-xl flex items-center justify-center shadow-xl shadow-orange-500/10">
-              <QrCode className="text-white w-6 h-6" />
+  if (view === 'home') {
+    return (
+      <div className="min-h-screen bg-[#020617] text-white selection:bg-orange-500/30">
+        {/* Navigation */}
+        <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl">
+          <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <QrCode className="text-white w-6 h-6" />
+              </div>
+              <span className="text-2xl font-black tracking-tighter uppercase italic">Afrikacha</span>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-white tracking-tight">Ecard TZ Studio</h1>
-              <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold">Tanzania Digital Invitations</p>
+            <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-slate-400">
+              <button onClick={() => scrollToId('portfolio')} className="hover:text-orange-500 transition-colors uppercase">Portfolio</button>
+              <button onClick={() => scrollToId('features')} className="hover:text-orange-500 transition-colors uppercase">Services</button>
+              <a href="tel:0659228205" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-lg shadow-orange-500/20">
+                Contact for Design
+              </a>
             </div>
           </div>
+        </nav>
 
-          <div className="flex items-center gap-2">
-            {isEditorActive && (
-              <button onClick={handleDownload} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full font-bold transition-all shadow-lg active:scale-95 text-sm">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Save Ecard</span>
+        {/* Hero Section */}
+        <section className="pt-48 pb-20 px-6">
+          <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black uppercase tracking-widest">
+                <Star className="w-3 h-3 fill-orange-500" /> Premium Tanzanian E-Cards
+              </div>
+              <h1 className="text-7xl lg:text-9xl font-black tracking-tighter leading-[0.85]">
+                Luxury <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-rose-600 italic">Access.</span>
+              </h1>
+              <p className="text-xl text-slate-400 leading-relaxed max-w-lg">
+                We transform traditional Tanzanian invitations into high-end secure digital experiences. Perfect for Weddings, Galas, and VIP corporate events.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-6 pt-4">
+                <button 
+                  onClick={() => scrollToId('portfolio')}
+                  className="group flex items-center justify-center gap-3 bg-white text-black px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:bg-orange-500 hover:text-white transition-all shadow-2xl active:scale-95"
+                >
+                  View Our Portfolio <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <a href="tel:0659228205" className="flex items-center justify-center gap-4 border border-slate-800 px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:border-orange-500/50 transition-all">
+                  <Phone className="w-5 h-5 text-orange-500" /> WhatsApp Us
+                </a>
+              </div>
+            </div>
+
+            <div className="relative animate-in fade-in zoom-in-95 duration-1000 delay-300">
+              <div className="absolute -inset-10 bg-orange-500/20 blur-[120px] rounded-full opacity-40 animate-pulse" />
+              <div className="relative bg-slate-900/40 border border-white/10 p-6 rounded-[60px] backdrop-blur-3xl rotate-3 shadow-2xl">
+                 <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2070&auto=format&fit=crop" className="rounded-[44px] brightness-75 hover:brightness-100 transition-all duration-700" alt="African Luxury" />
+                 <div className="absolute -bottom-10 -left-10 bg-orange-500 p-8 rounded-[40px] shadow-2xl -rotate-6 border-4 border-slate-950">
+                    <QrCode className="w-14 h-14 text-white" />
+                 </div>
+                 <div className="absolute -top-10 -right-10 bg-white text-black p-8 rounded-[40px] shadow-2xl rotate-12 flex flex-col gap-1 border-4 border-slate-950">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Security Verified</span>
+                    <span className="text-2xl font-black">QR-MANIFEST</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Portfolio Showcase */}
+        <section id="portfolio" className="py-32 px-6">
+          <div className="max-w-7xl mx-auto">
+             <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                <div className="space-y-4">
+                   <h2 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">Our Signature <br />Collections</h2>
+                   <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Exclusively designed for high-end events in Dar es Salaam & Arusha.</p>
+                </div>
+                <div className="w-full md:w-auto">
+                   <p className="text-slate-400 max-w-sm text-sm">Every design is custom-built with embedded security IDs and dynamic check-in capabilities.</p>
+                </div>
+             </div>
+
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {TEMPLATES.map((t, idx) => (
+                  <div key={idx} className="group relative aspect-[3/4] rounded-[48px] overflow-hidden bg-slate-900 border border-white/5 hover:border-orange-500/50 transition-all">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${t.bgGradient} opacity-20 group-hover:opacity-40 transition-opacity`} />
+                    <div className="absolute inset-0 p-8 flex flex-col justify-between">
+                       <div className="flex justify-between items-start">
+                          <span className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-[9px] font-black uppercase tracking-widest">{t.id.replace('_', ' ')}</span>
+                          <Sparkles className="w-5 h-5 text-orange-500" />
+                       </div>
+                       <div className="space-y-2">
+                          <h3 className="text-2xl font-black uppercase tracking-tighter">{t.name}</h3>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Designer: Afrikacha Studio</p>
+                       </div>
+                    </div>
+                    {/* Visual Overlay to simulate a physical card */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                  </div>
+                ))}
+             </div>
+          </div>
+        </section>
+
+        {/* Services Features */}
+        <section id="features" className="py-32 bg-white/5 border-y border-white/5 px-6">
+          <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-16">
+              <div className="lg:col-span-1 space-y-6">
+                 <h2 className="text-5xl font-black tracking-tighter uppercase leading-[0.9]">Why go <br /><span className="text-orange-500">Digital?</span></h2>
+                 <p className="text-slate-400 leading-relaxed">Paper invitations are beautiful, but digital invitations are powerful. We bridge the gap between elegance and security.</p>
+                 <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-900/50 border border-slate-800">
+                       <ShieldCheck className="w-6 h-6 text-orange-500" />
+                       <span className="text-sm font-bold uppercase tracking-tight">Zero Fraud Entry</span>
+                    </div>
+                    <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-900/50 border border-slate-800">
+                       <Users className="w-6 h-6 text-orange-500" />
+                       <span className="text-sm font-bold uppercase tracking-tight">Real-time Guest List</span>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="lg:col-span-2 grid md:grid-cols-2 gap-8">
+                  {[
+                    { title: "Smart RSVP", desc: "No more phone calls. Guests confirm their attendance with one tap.", icon: <Smartphone /> },
+                    { title: "Gate Management", desc: "We provide scanning apps for your bouncers to verify guests at the entrance.", icon: <CheckCircle2 /> },
+                    { title: "VIP Tiering", desc: "Separate gates for VIP, VVIP, and Single ticket holders.", icon: <Zap /> },
+                    { title: "Paper-to-Digital", icon: <ImageIcon />, desc: "We can digitize your existing physical cards with our AI scanner." }
+                  ].map((s, i) => (
+                    <div key={i} className="p-10 rounded-[40px] bg-slate-950 border border-white/5 hover:border-orange-500/20 transition-all">
+                       <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-6">{s.icon}</div>
+                       <h4 className="text-xl font-black mb-3 uppercase tracking-tight">{s.title}</h4>
+                       <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
+                    </div>
+                  ))}
+              </div>
+          </div>
+        </section>
+
+        {/* Contact CTA */}
+        <section className="py-40 text-center px-6">
+           <div className="max-w-4xl mx-auto space-y-12">
+              <h2 className="text-6xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.85]">Let's Create <br />Your Masterpiece</h2>
+              <div className="flex flex-wrap justify-center gap-10">
+                 <div className="flex flex-col items-center gap-2">
+                    <Phone className="w-8 h-8 text-orange-500" />
+                    <span className="text-xs font-black uppercase tracking-widest">0659 228 205</span>
+                 </div>
+                 <div className="flex flex-col items-center gap-2">
+                    <Mail className="w-8 h-8 text-orange-500" />
+                    <span className="text-xs font-black uppercase tracking-widest">hello@afrikacha.tz</span>
+                 </div>
+                 <div className="flex flex-col items-center gap-2">
+                    <Instagram className="w-8 h-8 text-orange-500" />
+                    <span className="text-xs font-black uppercase tracking-widest">@afrikacha_studio</span>
+                 </div>
+              </div>
+              <button className="bg-orange-500 text-white px-16 py-8 rounded-full font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all">
+                 Inquire Now
               </button>
-            )}
+           </div>
+        </section>
+
+        {/* Footer with Hidden Owner Entry */}
+        <footer className="py-12 border-t border-white/5 bg-black/40 px-6">
+           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+              <div className="flex items-center gap-3 grayscale opacity-50">
+                <QrCode className="w-6 h-6" />
+                <span className="text-lg font-black tracking-tighter uppercase italic">Afrikacha</span>
+              </div>
+              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5em]">&copy; 2025 Afrikacha Studio • Dar es Salaam</p>
+              <button 
+                onClick={() => setShowLogin(true)}
+                className="text-[9px] font-black uppercase tracking-widest text-slate-800 hover:text-slate-600 transition-colors flex items-center gap-2"
+              >
+                <Lock className="w-3 h-3" /> Owner Login
+              </button>
+           </div>
+        </footer>
+
+        {/* Owner Login Modal */}
+        {showLogin && (
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+             <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[48px] p-10 space-y-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8">
+                  <button onClick={() => setShowLogin(false)} className="text-slate-500 hover:text-white transition-colors">
+                    <Trash2 className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-orange-500 rounded-3xl flex items-center justify-center mx-auto shadow-2xl">
+                    <ShieldCheck className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-black text-center uppercase tracking-tighter">Owner Access Only</h3>
+                  <p className="text-center text-slate-500 text-sm">Please verify your identity to enter the Afrikacha Studio Workspace.</p>
+                </div>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-1">
+                     <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-2">Access Key</label>
+                     <input 
+                       type="password" 
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       autoFocus
+                       className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white outline-none focus:border-orange-500 transition-all font-mono" 
+                       placeholder="••••••••"
+                     />
+                  </div>
+                  <button type="submit" className="w-full bg-white text-black py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-500 hover:text-white transition-all shadow-xl flex items-center justify-center gap-3">
+                    <LogIn className="w-4 h-4" /> Unlock Studio
+                  </button>
+                </form>
+                <p className="text-center text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">Authorized Personnel Only</p>
+             </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Restricted Editor View (Only available after login)
+  return (
+    <div className="min-h-screen bg-[#020617] flex flex-col selection:bg-orange-500/30">
+      <header className="border-b border-white/5 bg-[#020617]/40 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('home')}>
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-rose-600 rounded-lg flex items-center justify-center">
+              <QrCode className="text-white w-5 h-5" />
+            </div>
+            <span className="text-xl font-black tracking-tighter uppercase italic">Afrikacha</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+               <ShieldCheck className="w-3 h-3" /> Owner Mode
+            </div>
+            <button onClick={handleDownload} className="flex items-center gap-2 bg-white text-black hover:bg-orange-500 hover:text-white px-5 py-2 rounded-full font-black transition-all shadow-lg active:scale-95 text-[10px] uppercase tracking-widest">
+              <Download className="w-4 h-4" />
+              <span>Export Card</span>
+            </button>
+            <button onClick={resetAll} className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+              <Trash2 className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-10 grid lg:grid-cols-12 gap-10">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-10 grid lg:grid-cols-12 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
+        {/* Workspace */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-          {!isEditorActive ? (
-            <div className="h-full flex flex-col justify-center items-center text-center space-y-8 py-10">
-              <div className="max-w-md space-y-4">
-                <h2 className="text-4xl font-black text-white leading-tight">Professional Event Invitations</h2>
-                <p className="text-slate-400">Scan, customize, and generate secure digital invitations for high-end Tanzanian events.</p>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
+              <Zap className="w-5 h-5 text-orange-400" />
+              Studio Editor
+            </h2>
+            {isAnalyzing && (
+              <div className="flex items-center gap-2 text-orange-400 animate-pulse bg-orange-400/10 px-3 py-1 rounded-full text-[10px] font-black">
+                <RefreshCcw className="w-3 h-3 animate-spin" />
+                AI Extracting...
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="group relative h-full border-2 border-dashed border-slate-800 hover:border-orange-500/50 bg-slate-900/30 rounded-[32px] flex flex-col items-center justify-center gap-5 cursor-pointer transition-all p-10"
-                >
-                  <Upload className="w-12 h-12 text-slate-500 group-hover:text-orange-400 group-hover:scale-110 transition-all" />
-                  <div>
-                    <p className="text-lg font-bold text-white">Upload Your Design</p>
-                    <p className="text-xs text-slate-500 mt-1">Overlay QR on your existing image</p>
-                  </div>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                </div>
-
-                <div className="grid grid-cols-1 gap-2">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-left px-2">Select a Template</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {TEMPLATES.map(t => (
-                      <button key={t.id} onClick={() => {setSelectedTemplate(t); setImage(null); setActiveTab('details');}}
-                        className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3 flex flex-col items-center gap-2 hover:border-orange-500/50 transition-all group"
-                      >
-                        <div className={`w-full h-12 rounded-lg bg-gradient-to-tr ${t.bgGradient} opacity-40 group-hover:opacity-100 transition-opacity`} />
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">{t.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex justify-center bg-slate-900/20 backdrop-blur-sm p-4 rounded-[40px] border border-white/5 shadow-2xl relative">
+            )}
+          </div>
+          
+          <div className="flex justify-center bg-slate-900/20 backdrop-blur-md p-6 rounded-[48px] border border-white/5 shadow-2xl relative">
+            {!selectedTemplate && !image ? (
+               <div className="h-[400px] w-full flex flex-col items-center justify-center gap-6 text-slate-500 border-2 border-dashed border-white/5 rounded-[36px]">
+                  <Layout className="w-16 h-16 opacity-10" />
+                  <p className="font-bold uppercase tracking-widest text-[10px]">Prepare a design to begin</p>
+               </div>
+            ) : (
+              <>
                 {selectedTemplate && (
                   <div className="hidden">
                      <TemplateRenderer template={selectedTemplate} details={details} guest={guest} canvasRef={templateCanvasRef} />
@@ -191,146 +427,141 @@ const App: React.FC = () => {
                   />
                 )}
                 <canvas ref={exportCanvasRef} className="hidden" />
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
+        {/* Controls */}
         <div className="lg:col-span-5">
-          {isEditorActive && (
-            <div className="bg-slate-900/90 border border-white/5 rounded-[40px] overflow-hidden shadow-2xl sticky top-24 backdrop-blur-xl">
-              <div className="flex bg-white/5 p-1.5 m-3 rounded-2xl">
-                {['templates', 'details', 'ticket', 'qr'].map(tab => (
-                  <button key={tab} onClick={() => setActiveTab(tab as any)}
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}>
-                    {tab}
-                  </button>
-                ))}
-              </div>
+          <div className="bg-slate-900/90 border border-white/10 rounded-[48px] overflow-hidden shadow-2xl sticky top-24 backdrop-blur-2xl">
+            <div className="flex bg-white/5 p-1.5 m-4 rounded-2xl">
+              {['templates', 'details', 'ticket', 'qr'].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab as any)}
+                  className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
 
-              <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-6">
-                {activeTab === 'templates' ? (
-                  <div className="space-y-4">
-                     <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-700 bg-slate-800/40 hover:bg-slate-800 transition-all group">
-                        <div className="flex items-center gap-4">
-                          <ImageIcon className="w-6 h-6 text-orange-400" />
-                          <div className="text-left">
-                            <p className="text-sm font-bold text-white">Use Custom Upload</p>
-                            <p className="text-[10px] text-slate-500">Overlay QR on your image</p>
+            <div className="p-8 max-h-[55vh] overflow-y-auto custom-scrollbar space-y-6">
+              {activeTab === 'templates' ? (
+                <div className="space-y-6">
+                   <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-between p-6 rounded-[32px] border border-slate-700 bg-slate-800/40 hover:bg-slate-800 transition-all group cursor-pointer"
+                   >
+                      <div className="flex items-center gap-4">
+                        <ImageIcon className="w-10 h-10 text-orange-400" />
+                        <div className="text-left">
+                          <p className="text-sm font-black text-white uppercase tracking-tight">Digitize Paper Card</p>
+                          <p className="text-[9px] text-slate-500 uppercase font-black">AI Image Scanning</p>
+                        </div>
+                      </div>
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                   </div>
+
+                   <div className="space-y-3">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Studio Presets</p>
+                      {TEMPLATES.map(t => (
+                        <button key={t.id} onClick={() => {setSelectedTemplate(t); setImage(null);}}
+                          className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all ${selectedTemplate?.id === t.id ? 'bg-orange-500/10 border-orange-500/50 text-orange-400' : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${t.bgGradient} flex items-center justify-center opacity-40 shadow-xl`}>
+                               <Star className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-tight">{t.name}</span>
+                          </div>
+                          {t.hasFlowers && <Sparkles className="w-4 h-4 text-orange-500" />}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              ) : activeTab === 'details' ? (
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Header (Host Info)</label>
+                    <textarea value={details.hostNames} onChange={e => setDetails({...details, hostNames: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-3xl px-6 py-5 text-white text-xs leading-relaxed outline-none focus:border-orange-500 min-h-[120px] transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Main Celebrants</label>
+                    <input type="text" value={details.names} onChange={e => setDetails({...details, names: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:border-orange-500" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Date</label>
+                      <input type="text" value={details.date} onChange={e => setDetails({...details, date: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Time</label>
+                      <input type="text" value={details.time} onChange={e => setDetails({...details, time: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none" />
+                    </div>
+                  </div>
+                </div>
+              ) : activeTab === 'ticket' ? (
+                <div className="space-y-6">
+                  <div className="bg-orange-500/5 p-8 rounded-[40px] border border-orange-500/10 space-y-6 shadow-2xl">
+                     <div className="flex items-center gap-3">
+                        <ShieldCheck className="w-6 h-6 text-orange-500" />
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Entry Verification</h4>
+                     </div>
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-600 uppercase">Guest To Print</label>
+                          <input type="text" value={guest.guestName} onChange={e => setGuest({...guest, guestName: e.target.value})} 
+                            className="w-full bg-black border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none focus:border-orange-500" placeholder="e.g. Salim Bakari" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-600 uppercase">Tier Level</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {['Single', 'Double', 'VIP', 'VVIP'].map(t => (
+                              <button key={t} onClick={() => setGuest({...guest, ticketType: t as TicketType})}
+                                className={`py-5 rounded-2xl text-[10px] font-black uppercase border transition-all ${guest.ticketType === t ? 'bg-orange-500 border-orange-500 text-white shadow-xl scale-[1.02]' : 'bg-black border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                {t}
+                              </button>
+                            ))}
                           </div>
                         </div>
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                     </button>
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 pt-4">Premium Styles</p>
-                     {TEMPLATES.map(t => (
-                        <button key={t.id} onClick={() => {setSelectedTemplate(t); setImage(null);}}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${selectedTemplate?.id === t.id ? 'bg-orange-500/10 border-orange-500/50 text-orange-400' : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${t.bgGradient}`} />
-                            <span className="text-sm font-bold uppercase">{t.name}</span>
-                          </div>
-                          {t.hasFlowers && <Sparkles className="w-4 h-4 text-orange-400" />}
-                        </button>
-                     ))}
+                        <div className="pt-8 mt-8 border-t border-slate-900 flex items-center justify-between">
+                           <div>
+                             <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Security Hash</p>
+                             <p className="text-sm font-mono text-orange-500 font-bold">{guest.uniqueId}</p>
+                           </div>
+                           <button onClick={() => setGuest({...guest, uniqueId: generateId()})} className="p-4 bg-slate-900 rounded-2xl text-slate-400 hover:text-white transition-all active:rotate-180 duration-500">
+                             <RefreshCcw className="w-5 h-5" />
+                           </button>
+                        </div>
+                     </div>
                   </div>
-                ) : activeTab === 'details' ? (
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Invitation Header / Host Info</label>
-                      <textarea value={details.hostNames} onChange={e => setDetails({...details, hostNames: e.target.value})}
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-white text-xs leading-relaxed outline-none focus:border-orange-500 min-h-[80px]" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Celebrant Names</label>
-                      <input type="text" value={details.names} onChange={e => setDetails({...details, names: e.target.value})}
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-orange-500" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</label>
-                        <input type="text" value={details.date} onChange={e => setDetails({...details, date: e.target.value})} className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm outline-none" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</label>
-                        <input type="text" value={details.time} onChange={e => setDetails({...details, time: e.target.value})} className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm outline-none" />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Venue</label>
-                      <input type="text" value={details.venue} onChange={e => setDetails({...details, venue: e.target.value})} className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm outline-none" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Dress Code</label>
-                      <input type="text" value={details.dressCode} onChange={e => setDetails({...details, dressCode: e.target.value})} className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm outline-none font-bold text-orange-400" />
-                    </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">QR Scale</label>
+                    <input type="range" min="40" max="350" step="5" value={config.size}
+                      onChange={(e) => setConfig(prev => ({ ...prev, size: parseInt(e.target.value) }))}
+                      className="w-full accent-orange-500 h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer" />
                   </div>
-                ) : activeTab === 'ticket' ? (
-                  <div className="space-y-6">
-                    <div className="bg-orange-500/5 p-6 rounded-[32px] border border-orange-500/10 space-y-5">
-                       <h4 className="text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4" /> Guest & Check-in Details
-                       </h4>
-                       <div className="space-y-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase">Personalize for Guest</label>
-                            <input type="text" value={guest.guestName} onChange={e => setGuest({...guest, guestName: e.target.value})} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none" placeholder="e.g. Mussa Juma" />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase">Ticket Level</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {['Single', 'Double', 'VIP', 'VVIP'].map(t => (
-                                <button key={t} onClick={() => setGuest({...guest, ticketType: t as TicketType})}
-                                  className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${guest.ticketType === t ? 'bg-orange-500 border-orange-500 text-white shadow-lg' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>
-                                  {t}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="pt-4 flex items-center justify-between border-t border-slate-800">
-                             <div className="space-y-1">
-                               <p className="text-[9px] font-bold text-slate-500 uppercase">Secure Unique ID</p>
-                               <p className="text-xs font-mono text-orange-500">{guest.uniqueId}</p>
-                             </div>
-                             <button onClick={() => setGuest({...guest, uniqueId: generateId()})} className="p-3 bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
-                               <RefreshCcw className="w-4 h-4" />
-                             </button>
-                          </div>
-                       </div>
-                    </div>
+                  <div className="p-8 bg-black rounded-[40px] border border-white/5 space-y-4 shadow-inner">
+                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Metadata Payload</p>
+                     <div className="p-6 bg-slate-900/40 rounded-3xl text-[11px] font-mono text-orange-400/60 break-all leading-relaxed border border-white/5">
+                        {finalQRContent}
+                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">QR Size</label>
-                      <input type="range" min="40" max="300" step="5" value={config.size}
-                        onChange={(e) => setConfig(prev => ({ ...prev, size: parseInt(e.target.value) }))}
-                        className="w-full accent-orange-500" />
-                    </div>
-                    <div className="p-5 bg-black/40 rounded-3xl border border-white/5 space-y-4">
-                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Encoded Payload</p>
-                       <div className="p-4 bg-slate-900/50 rounded-2xl text-[11px] font-mono text-orange-400/80 break-all leading-relaxed border border-white/5">
-                          {finalQRContent}
-                       </div>
-                       <p className="text-[9px] text-slate-500 italic">This data is structured for professional check-in scanners at event entrances.</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6 bg-black/20 border-t border-white/5 flex items-center gap-4">
-                <button onClick={resetAll} className="flex-1 py-4 text-[10px] font-black text-slate-500 hover:text-red-400 transition-colors uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <Trash2 className="w-4 h-4" /> Reset Card
-                </button>
-              </div>
+                </div>
+              )}
             </div>
-          )}
+
+            <div className="p-8 border-t border-white/10 bg-black/20">
+               <button onClick={handleDownload} className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.3em] text-[10px] rounded-[32px] shadow-2xl hover:bg-orange-500 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-4">
+                 <Download className="w-5 h-5" /> Generate & Export
+               </button>
+            </div>
+          </div>
         </div>
       </main>
-
-      <footer className="py-10 text-center border-t border-white/5 bg-slate-900/40">
-        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Designed for high-end Tanzanian Events • Secure Check-in Enabled</p>
-      </footer>
     </div>
   );
 };
