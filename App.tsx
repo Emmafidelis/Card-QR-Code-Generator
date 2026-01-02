@@ -13,11 +13,11 @@ import { EventDetails, QRConfig, CardTemplate, GuestDetails, TicketType } from '
 import { analyzeCardImage } from './services/geminiService';
 
 const TEMPLATES: CardTemplate[] = [
-  { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate' },
-  { id: 'classic_gold', name: 'Royal Gold', primaryColor: '#B7950B', secondaryColor: '#9A7D0A', accentColor: '#D4AC0D', fontFamily: 'serif', bgGradient: 'from-amber-50 to-yellow-100', hasFlowers: false, borderStyle: 'ornate' },
-  { id: 'royal_purple', name: 'Velvet Purple', primaryColor: '#F1C40F', secondaryColor: '#F39C12', accentColor: '#E67E22', fontFamily: 'serif', bgGradient: 'from-purple-900 to-indigo-950', hasFlowers: false, borderStyle: 'pattern' },
-  { id: 'zanzibar_pattern', name: 'Zanzibar Shores', primaryColor: '#2980B9', secondaryColor: '#2C3E50', accentColor: '#3498DB', fontFamily: 'serif', bgGradient: 'from-cyan-50 to-blue-100', hasFlowers: true, borderStyle: 'pattern' },
-  { id: 'modern_minimal', name: 'Minimalist Clean', primaryColor: '#2C3E50', secondaryColor: '#34495E', accentColor: '#7F8C8D', fontFamily: 'sans-serif', bgGradient: 'from-slate-50 to-slate-200', hasFlowers: false, borderStyle: 'none' },
+  { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate', previewImage: 'https://images.unsplash.com/photo-1522673607200-1648832cee98?q=80&w=1000&auto=format&fit=crop' },
+  { id: 'classic_gold', name: 'Royal Gold', primaryColor: '#B7950B', secondaryColor: '#9A7D0A', accentColor: '#D4AC0D', fontFamily: 'serif', bgGradient: 'from-amber-50 to-yellow-100', hasFlowers: false, borderStyle: 'ornate', previewImage: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=1000&auto=format&fit=crop' },
+  { id: 'royal_purple', name: 'Velvet Purple', primaryColor: '#F1C40F', secondaryColor: '#F39C12', accentColor: '#E67E22', fontFamily: 'serif', bgGradient: 'from-purple-900 to-indigo-950', hasFlowers: false, borderStyle: 'pattern', previewImage: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1000&auto=format&fit=crop' },
+  { id: 'zanzibar_pattern', name: 'Zanzibar Shores', primaryColor: '#2980B9', secondaryColor: '#2C3E50', accentColor: '#3498DB', fontFamily: 'serif', bgGradient: 'from-cyan-50 to-blue-100', hasFlowers: true, borderStyle: 'pattern', previewImage: 'https://images.unsplash.com/photo-1510076857177-7470076d4098?q=80&w=1000&auto=format&fit=crop' },
+  { id: 'modern_minimal', name: 'Minimalist Clean', primaryColor: '#2C3E50', secondaryColor: '#34495E', accentColor: '#7F8C8D', fontFamily: 'sans-serif', bgGradient: 'from-slate-50 to-slate-200', hasFlowers: false, borderStyle: 'none', previewImage: 'https://images.unsplash.com/photo-1527524441379-51c796ad71c4?q=80&w=1000&auto=format&fit=crop' },
 ];
 
 const generateId = () => `AFK-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
@@ -138,7 +138,7 @@ const App: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'Afrikacha2025') { // Hardcoded owner password
+    if (password === 'Afrikacha2025') {
       setIsOwner(true);
       setShowLogin(false);
       setView('editor');
@@ -217,8 +217,8 @@ const App: React.FC = () => {
           <div className="max-w-7xl mx-auto">
              <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
                 <div className="space-y-4">
-                   <h2 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">Our Signature <br />Collections</h2>
-                   <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Exclusively designed for high-end events in Dar es Salaam & Arusha.</p>
+                   <h2 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">Signature <br />Collections</h2>
+                   <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Exclusively designed for high-end events in Tanzania.</p>
                 </div>
                 <div className="w-full md:w-auto">
                    <p className="text-slate-400 max-w-sm text-sm">Every design is custom-built with embedded security IDs and dynamic check-in capabilities.</p>
@@ -227,20 +227,23 @@ const App: React.FC = () => {
 
              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {TEMPLATES.map((t, idx) => (
-                  <div key={idx} className="group relative aspect-[3/4] rounded-[48px] overflow-hidden bg-slate-900 border border-white/5 hover:border-orange-500/50 transition-all">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${t.bgGradient} opacity-20 group-hover:opacity-40 transition-opacity`} />
-                    <div className="absolute inset-0 p-8 flex flex-col justify-between">
+                  <div key={idx} className="group relative aspect-[3/4] rounded-[48px] overflow-hidden bg-slate-900 border border-white/5 hover:border-orange-500/50 transition-all shadow-2xl">
+                    {t.previewImage ? (
+                      <img src={t.previewImage} alt={t.name} className="absolute inset-0 w-full h-full object-cover brightness-75 group-hover:brightness-90 transition-all duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${t.bgGradient} opacity-20`} />
+                    )}
+                    <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
                        <div className="flex justify-between items-start">
-                          <span className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-[9px] font-black uppercase tracking-widest">{t.id.replace('_', ' ')}</span>
-                          <Sparkles className="w-5 h-5 text-orange-500" />
+                          <span className="px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-[9px] font-black uppercase tracking-widest">{t.id.replace('_', ' ')}</span>
+                          <Sparkles className="w-5 h-5 text-orange-500 drop-shadow-lg" />
                        </div>
                        <div className="space-y-2">
-                          <h3 className="text-2xl font-black uppercase tracking-tighter">{t.name}</h3>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Designer: Afrikacha Studio</p>
+                          <h3 className="text-2xl font-black uppercase tracking-tighter text-white drop-shadow-xl">{t.name}</h3>
+                          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Designer: Afrikacha Studio</p>
                        </div>
                     </div>
-                    {/* Visual Overlay to simulate a physical card */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 pointer-events-none" />
                   </div>
                 ))}
              </div>
@@ -306,7 +309,6 @@ const App: React.FC = () => {
            </div>
         </section>
 
-        {/* Footer with Hidden Owner Entry */}
         <footer className="py-12 border-t border-white/5 bg-black/40 px-6">
            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
               <div className="flex items-center gap-3 grayscale opacity-50">
@@ -363,7 +365,7 @@ const App: React.FC = () => {
     );
   }
 
-  // Restricted Editor View (Only available after login)
+  // Restricted Editor View
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col selection:bg-orange-500/30">
       <header className="border-b border-white/5 bg-[#020617]/40 backdrop-blur-xl sticky top-0 z-50">

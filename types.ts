@@ -44,6 +44,7 @@ export interface CardTemplate {
   bgGradient: string;
   hasFlowers: boolean;
   borderStyle: 'ornate' | 'simple' | 'none' | 'pattern';
+  previewImage?: string;
 }
 
 export interface CardState {
