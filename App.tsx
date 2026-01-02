@@ -13,11 +13,17 @@ import { EventDetails, QRConfig, CardTemplate, GuestDetails, TicketType } from '
 import { analyzeCardImage } from './services/geminiService';
 
 const TEMPLATES: CardTemplate[] = [
-  { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate', previewImage: 'https://images.unsplash.com/photo-1522673607200-1648832cee98?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'classic_gold', name: 'Royal Gold', primaryColor: '#B7950B', secondaryColor: '#9A7D0A', accentColor: '#D4AC0D', fontFamily: 'serif', bgGradient: 'from-amber-50 to-yellow-100', hasFlowers: false, borderStyle: 'ornate', previewImage: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'royal_purple', name: 'Velvet Purple', primaryColor: '#F1C40F', secondaryColor: '#F39C12', accentColor: '#E67E22', fontFamily: 'serif', bgGradient: 'from-purple-900 to-indigo-950', hasFlowers: false, borderStyle: 'pattern', previewImage: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'zanzibar_pattern', name: 'Zanzibar Shores', primaryColor: '#2980B9', secondaryColor: '#2C3E50', accentColor: '#3498DB', fontFamily: 'serif', bgGradient: 'from-cyan-50 to-blue-100', hasFlowers: true, borderStyle: 'pattern', previewImage: 'https://images.unsplash.com/photo-1510076857177-7470076d4098?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'modern_minimal', name: 'Minimalist Clean', primaryColor: '#2C3E50', secondaryColor: '#34495E', accentColor: '#7F8C8D', fontFamily: 'sans-serif', bgGradient: 'from-slate-50 to-slate-200', hasFlowers: false, borderStyle: 'none', previewImage: 'https://images.unsplash.com/photo-1527524441379-51c796ad71c4?q=80&w=1000&auto=format&fit=crop' },
+  { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate' },
+  { id: 'classic_gold', name: 'Royal Gold', primaryColor: '#B7950B', secondaryColor: '#9A7D0A', accentColor: '#D4AC0D', fontFamily: 'serif', bgGradient: 'from-amber-50 to-yellow-100', hasFlowers: false, borderStyle: 'ornate' },
+  { id: 'royal_purple', name: 'Velvet Purple', primaryColor: '#F1C40F', secondaryColor: '#F39C12', accentColor: '#E67E22', fontFamily: 'serif', bgGradient: 'from-purple-900 to-indigo-950', hasFlowers: false, borderStyle: 'pattern' },
+  { id: 'zanzibar_pattern', name: 'Zanzibar Shores', primaryColor: '#2980B9', secondaryColor: '#2C3E50', accentColor: '#3498DB', fontFamily: 'serif', bgGradient: 'from-cyan-50 to-blue-100', hasFlowers: true, borderStyle: 'pattern' },
+  { id: 'modern_minimal', name: 'Minimalist Clean', primaryColor: '#2C3E50', secondaryColor: '#34495E', accentColor: '#7F8C8D', fontFamily: 'sans-serif', bgGradient: 'from-slate-50 to-slate-200', hasFlowers: false, borderStyle: 'none' },
+];
+
+const PORTFOLIO_SAMPLES = [
+  { names: "Fatuma & Juma", type: "Wedding", venue: "Mlimani City Hall", date: "15 JULY 2025" },
+  { names: "Afrikacha Gala", type: "Corporate", venue: "Serena Hotel", date: "02 OCT 2025" },
+  { names: "Neema's Send-off", type: "Ceremony", venue: "Diamond Jubilee", date: "20 DEC 2025" }
 ];
 
 const generateId = () => `AFK-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
@@ -51,6 +57,33 @@ const DEFAULT_DETAILS: EventDetails = {
   contact: "0659228205",
   dressCode: "Burnt Orange",
   additionalInfo: "KARIBU SANA!"
+};
+
+const LivePreviewCard: React.FC<{ template: CardTemplate, sample: typeof PORTFOLIO_SAMPLES[0] }> = ({ template, sample }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  return (
+    <div className="group relative aspect-[3/4] rounded-[48px] overflow-hidden bg-slate-900 border border-white/5 hover:border-orange-500/50 transition-all shadow-2xl">
+      <div className="absolute inset-0 scale-50 -translate-y-1/4 origin-center group-hover:scale-[0.52] transition-transform duration-700">
+        <TemplateRenderer 
+          template={template} 
+          details={{...DEFAULT_DETAILS, names: sample.names, eventTitle: sample.type, venue: sample.venue, date: sample.date}} 
+          guest={{...DEFAULT_GUEST, guestName: "Sample Guest", uniqueId: "AFK-SAMPLE"}}
+          canvasRef={canvasRef}
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-20 p-8 flex flex-col justify-end">
+         <div className="flex justify-between items-center mb-2">
+            <span className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-[8px] font-black uppercase tracking-widest text-orange-400">
+              {template.name}
+            </span>
+            <QrCode className="w-4 h-4 text-white/40" />
+         </div>
+         <h3 className="text-xl font-black uppercase tracking-tighter text-white">{sample.names}</h3>
+         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{sample.venue}</p>
+      </div>
+    </div>
+  );
 };
 
 const App: React.FC = () => {
@@ -150,7 +183,6 @@ const App: React.FC = () => {
   if (view === 'home') {
     return (
       <div className="min-h-screen bg-[#020617] text-white selection:bg-orange-500/30">
-        {/* Navigation */}
         <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
@@ -169,7 +201,6 @@ const App: React.FC = () => {
           </div>
         </nav>
 
-        {/* Hero Section */}
         <section className="pt-48 pb-20 px-6">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
@@ -188,7 +219,7 @@ const App: React.FC = () => {
                   onClick={() => scrollToId('portfolio')}
                   className="group flex items-center justify-center gap-3 bg-white text-black px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:bg-orange-500 hover:text-white transition-all shadow-2xl active:scale-95"
                 >
-                  View Our Portfolio <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Explore Cards <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <a href="tel:0659228205" className="flex items-center justify-center gap-4 border border-slate-800 px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:border-orange-500/50 transition-all">
                   <Phone className="w-5 h-5 text-orange-500" /> WhatsApp Us
@@ -212,7 +243,6 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Portfolio Showcase */}
         <section id="portfolio" className="py-32 px-6">
           <div className="max-w-7xl mx-auto">
              <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
@@ -221,36 +251,27 @@ const App: React.FC = () => {
                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Exclusively designed for high-end events in Tanzania.</p>
                 </div>
                 <div className="w-full md:w-auto">
-                   <p className="text-slate-400 max-w-sm text-sm">Every design is custom-built with embedded security IDs and dynamic check-in capabilities.</p>
+                   <p className="text-slate-400 max-w-sm text-sm italic">Below are real examples of the secure digital invitations we produce in our studio.</p>
                 </div>
              </div>
 
              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {TEMPLATES.map((t, idx) => (
-                  <div key={idx} className="group relative aspect-[3/4] rounded-[48px] overflow-hidden bg-slate-900 border border-white/5 hover:border-orange-500/50 transition-all shadow-2xl">
-                    {t.previewImage ? (
-                      <img src={t.previewImage} alt={t.name} className="absolute inset-0 w-full h-full object-cover brightness-75 group-hover:brightness-90 transition-all duration-500 group-hover:scale-105" />
-                    ) : (
-                      <div className={`absolute inset-0 bg-gradient-to-br ${t.bgGradient} opacity-20`} />
-                    )}
-                    <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
-                       <div className="flex justify-between items-start">
-                          <span className="px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-[9px] font-black uppercase tracking-widest">{t.id.replace('_', ' ')}</span>
-                          <Sparkles className="w-5 h-5 text-orange-500 drop-shadow-lg" />
-                       </div>
-                       <div className="space-y-2">
-                          <h3 className="text-2xl font-black uppercase tracking-tighter text-white drop-shadow-xl">{t.name}</h3>
-                          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Designer: Afrikacha Studio</p>
-                       </div>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 pointer-events-none" />
-                  </div>
+                {TEMPLATES.slice(0, 3).map((t, idx) => (
+                   <LivePreviewCard key={t.id} template={t} sample={PORTFOLIO_SAMPLES[idx]} />
                 ))}
+             </div>
+             
+             <div className="mt-20 p-12 bg-white/5 rounded-[48px] border border-white/5 text-center">
+                <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-xs mb-8">Want a custom layout for your event?</p>
+                <div className="flex justify-center gap-4">
+                   {TEMPLATES.slice(3).map(t => (
+                     <div key={t.id} className={`w-3 h-3 rounded-full bg-gradient-to-br ${t.bgGradient} opacity-50`} />
+                   ))}
+                </div>
              </div>
           </div>
         </section>
 
-        {/* Services Features */}
         <section id="features" className="py-32 bg-white/5 border-y border-white/5 px-6">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-16">
               <div className="lg:col-span-1 space-y-6">
@@ -285,7 +306,6 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Contact CTA */}
         <section className="py-40 text-center px-6">
            <div className="max-w-4xl mx-auto space-y-12">
               <h2 className="text-6xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.85]">Let's Create <br />Your Masterpiece</h2>
@@ -325,7 +345,6 @@ const App: React.FC = () => {
            </div>
         </footer>
 
-        {/* Owner Login Modal */}
         {showLogin && (
           <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
              <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[48px] p-10 space-y-8 relative overflow-hidden">
@@ -365,7 +384,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Restricted Editor View
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col selection:bg-orange-500/30">
       <header className="border-b border-white/5 bg-[#020617]/40 backdrop-blur-xl sticky top-0 z-50">
@@ -393,8 +411,6 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-10 grid lg:grid-cols-12 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        
-        {/* Workspace */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
@@ -434,7 +450,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Controls */}
         <div className="lg:col-span-5">
           <div className="bg-slate-900/90 border border-white/10 rounded-[48px] overflow-hidden shadow-2xl sticky top-24 backdrop-blur-2xl">
             <div className="flex bg-white/5 p-1.5 m-4 rounded-2xl">
