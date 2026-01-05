@@ -6,7 +6,11 @@
 
 This contains everything you need to run your app locally.
 
+<<<<<<< HEAD
 View your app in AI Studio: https://ai.studio/apps/drive/1qfJTs5G4t55XxJ9ERqOaLM-kA_eHogwT
+=======
+Note: This project runs as a standard Vite + React app and does not require AI Studio.
+>>>>>>> bafd188 (update readme.md)
 
 ## Run Locally
 
