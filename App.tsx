@@ -54,7 +54,7 @@ const DEFAULT_DETAILS: EventDetails = {
   time: "Saa 10:00 Jioni",
   venue: "PTA HALL, Sabasaba Ground",
   locationUrl: "https://maps.app.goo.gl/79UGeaJyx5YZQYTB9",
-  contact: "0659228205",
+  contact: "0718710901",
   dressCode: "Burnt Orange",
   additionalInfo: "KARIBU SANA!"
 };
@@ -194,9 +194,9 @@ const App: React.FC = () => {
             <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-slate-400">
               <button onClick={() => scrollToId('portfolio')} className="hover:text-orange-500 transition-colors uppercase">Portfolio</button>
               <button onClick={() => scrollToId('features')} className="hover:text-orange-500 transition-colors uppercase">Services</button>
-              <a href="tel:0659228205" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-lg shadow-orange-500/20">
+              <button onClick={() => scrollToId('contact')} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-lg shadow-orange-500/20 text-xs font-black uppercase tracking-widest">
                 Contact for Design
-              </a>
+              </button>
             </div>
           </div>
         </nav>
@@ -221,7 +221,7 @@ const App: React.FC = () => {
                 >
                   Explore Cards <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-                <a href="tel:0659228205" className="flex items-center justify-center gap-4 border border-slate-800 px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:border-orange-500/50 transition-all">
+                <a href="https://wa.me/255718710901" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-4 border border-slate-800 px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:border-orange-500/50 transition-all">
                   <Phone className="w-5 h-5 text-orange-500" /> WhatsApp Us
                 </a>
               </div>
@@ -306,13 +306,13 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        <section className="py-40 text-center px-6">
+        <section id="contact" className="py-40 text-center px-6">
            <div className="max-w-4xl mx-auto space-y-12">
               <h2 className="text-6xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.85]">Let's Create <br />Your Masterpiece</h2>
               <div className="flex flex-wrap justify-center gap-10">
                  <div className="flex flex-col items-center gap-2">
                     <Phone className="w-8 h-8 text-orange-500" />
-                    <span className="text-xs font-black uppercase tracking-widest">0659 228 205</span>
+                    <span className="text-xs font-black uppercase tracking-widest">0718 710 901</span>
                  </div>
                  <div className="flex flex-col items-center gap-2">
                     <Mail className="w-8 h-8 text-orange-500" />
@@ -323,9 +323,9 @@ const App: React.FC = () => {
                     <span className="text-xs font-black uppercase tracking-widest">@afrikacha_studio</span>
                  </div>
               </div>
-              <button className="bg-orange-500 text-white px-16 py-8 rounded-full font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all">
+              <a href="https://wa.me/255718710901" target="_blank" rel="noopener noreferrer" className="inline-block bg-orange-500 text-white px-16 py-8 rounded-full font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all">
                  Inquire Now
-              </button>
+              </a>
            </div>
         </section>
 
