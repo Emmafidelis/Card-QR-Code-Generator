@@ -10,7 +10,6 @@ import {
 import QRCanvas from './components/QRCanvas';
 import TemplateRenderer from './components/TemplateRenderer';
 import { EventDetails, QRConfig, CardTemplate, GuestDetails, TicketType } from './types';
-import { analyzeCardImage } from './services/geminiService';
 
 const TEMPLATES: CardTemplate[] = [
   { id: 'wedding_floral', name: 'Swahili Floral', primaryColor: '#E67E22', secondaryColor: '#D35400', accentColor: '#F39C12', fontFamily: 'serif', bgGradient: 'from-orange-50 to-orange-100', hasFlowers: true, borderStyle: 'ornate' },
@@ -97,7 +96,6 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<QRConfig>(DEFAULT_CONFIG);
   const [details, setDetails] = useState<EventDetails>(DEFAULT_DETAILS);
   const [guest, setGuest] = useState<GuestDetails>(DEFAULT_GUEST);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<'templates' | 'details' | 'ticket' | 'qr'>('templates');
   
   const templateCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -129,13 +127,6 @@ const App: React.FC = () => {
         setSelectedTemplate(null);
         setView('editor');
         setActiveTab('qr');
-        setIsAnalyzing(true);
-        const extracted = await analyzeCardImage(base64);
-        if (extracted) {
-          setDetails(prev => ({ ...prev, ...extracted }));
-          if (extracted.locationUrl) setConfig(prev => ({ ...prev, content: extracted.locationUrl, autoFormat: false }));
-        }
-        setIsAnalyzing(false);
       };
       reader.readAsDataURL(file);
     }
@@ -294,7 +285,7 @@ const App: React.FC = () => {
                     { title: "Smart RSVP", desc: "No more phone calls. Guests confirm their attendance with one tap.", icon: <Smartphone /> },
                     { title: "Gate Management", desc: "We provide scanning apps for your bouncers to verify guests at the entrance.", icon: <CheckCircle2 /> },
                     { title: "VIP Tiering", desc: "Separate gates for VIP, VVIP, and Single ticket holders.", icon: <Zap /> },
-                    { title: "Paper-to-Digital", icon: <ImageIcon />, desc: "We can digitize your existing physical cards with our AI scanner." }
+                    { title: "Paper-to-Digital", icon: <ImageIcon />, desc: "We can digitize your existing physical cards with our scanning tools." }
                   ].map((s, i) => (
                     <div key={i} className="p-10 rounded-[40px] bg-slate-950 border border-white/5 hover:border-orange-500/20 transition-all">
                        <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-6">{s.icon}</div>
@@ -417,12 +408,6 @@ const App: React.FC = () => {
               <Zap className="w-5 h-5 text-orange-400" />
               Studio Editor
             </h2>
-            {isAnalyzing && (
-              <div className="flex items-center gap-2 text-orange-400 animate-pulse bg-orange-400/10 px-3 py-1 rounded-full text-[10px] font-black">
-                <RefreshCcw className="w-3 h-3 animate-spin" />
-                AI Extracting...
-              </div>
-            )}
           </div>
           
           <div className="flex justify-center bg-slate-900/20 backdrop-blur-md p-6 rounded-[48px] border border-white/5 shadow-2xl relative">
@@ -472,7 +457,7 @@ const App: React.FC = () => {
                         <ImageIcon className="w-10 h-10 text-orange-400" />
                         <div className="text-left">
                           <p className="text-sm font-black text-white uppercase tracking-tight">Digitize Paper Card</p>
-                          <p className="text-[9px] text-slate-500 uppercase font-black">AI Image Scanning</p>
+                          <p className="text-[9px] text-slate-500 uppercase font-black">Image Upload</p>
                         </div>
                       </div>
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
