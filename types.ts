@@ -10,6 +10,7 @@ export interface EventDetails {
   eventTitle: string;
   additionalInfo: string;
   hostNames: string;
+  instruction: string;
 }
 
 export type TicketType = 'Single' | 'Double' | 'VIP' | 'VVIP';
@@ -32,7 +33,7 @@ export interface QRConfig {
   autoFormat: boolean; // If true, builds structured ticket data
 }
 
-export type TemplateTheme = 'wedding_floral' | 'classic_gold' | 'birthday_party' | 'modern_minimal' | 'safari_gala' | 'royal_purple' | 'zanzibar_pattern';
+export type TemplateTheme = 'wedding_floral' | 'classic_gold' | 'birthday_party' | 'modern_minimal' | 'safari_gala' | 'royal_purple' | 'zanzibar_pattern' | 'lyakurwa_red_navy';
 
 export interface CardTemplate {
   id: TemplateTheme;

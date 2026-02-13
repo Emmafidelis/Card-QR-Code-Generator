@@ -1,19 +1,22 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { EventDetails, CardTemplate, GuestDetails } from '../types';
 
 interface TemplateRendererProps {
   template: CardTemplate;
   details: EventDetails;
   guest: GuestDetails;
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  canvasRef?: React.RefObject<HTMLCanvasElement>; // Made optional to prevent crashes
   width?: number;
   height?: number;
 }
 
 const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, details, guest, canvasRef, width = 800, height = 1100 }) => {
+  const internalRef = useRef<HTMLCanvasElement>(null);
+  const effectiveRef = canvasRef || internalRef;
+
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = effectiveRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -22,152 +25,154 @@ const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, details, 
     canvas.height = height;
 
     // 1. Background
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    if (template.id === 'wedding_floral') {
-      gradient.addColorStop(0, '#FFFBF0');
-      gradient.addColorStop(1, '#F5E6D3');
-    } else if (template.id === 'classic_gold') {
-      gradient.addColorStop(0, '#FFFFFF');
-      gradient.addColorStop(1, '#FFF5E1');
-    } else if (template.id === 'royal_purple') {
-      gradient.addColorStop(0, '#2E1A47');
-      gradient.addColorStop(1, '#1A0F2B');
-    } else if (template.id === 'zanzibar_pattern') {
-      gradient.addColorStop(0, '#E0F7FA');
-      gradient.addColorStop(1, '#B2EBF2');
-    } else {
-      gradient.addColorStop(0, '#ffffff');
-      gradient.addColorStop(1, '#f1f2f6');
-    }
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "#FFFFFF";
+    if (template.id === 'royal_purple') ctx.fillStyle = '#2E1A47';
+    if (template.id === 'zanzibar_pattern') ctx.fillStyle = '#E0F7FA';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Decorative Patterns & Flowers
-    if (template.borderStyle === 'pattern') {
-      ctx.globalAlpha = 0.05;
-      ctx.strokeStyle = template.primaryColor;
-      for (let i = 0; i < width; i += 50) {
-        for (let j = 0; j < height; j += 50) {
-          ctx.strokeRect(i, j, 40, 40);
-        }
-      }
-      ctx.globalAlpha = 1.0;
+    // 2. Decorative Patterns & Borders
+    if (template.id === 'lyakurwa_red_navy') {
+      ctx.strokeStyle = template.accentColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(80, 50); ctx.lineTo(width - 80, 50); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(100, 60); ctx.lineTo(width - 100, 60); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(80, height - 50); ctx.lineTo(width - 80, height - 50); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(100, height - 60); ctx.lineTo(width - 100, height - 60); ctx.stroke();
     }
 
+    // 3. Flowers (Sophisticated rendering)
     if (template.hasFlowers) {
-      const drawDetailedFlower = (x: number, y: number, color: string, scale = 1) => {
+      const drawRose = (x: number, y: number, color: string, scale = 1, rotation = 0) => {
         ctx.save();
         ctx.translate(x, y);
+        ctx.rotate(rotation);
         ctx.scale(scale, scale);
-        ctx.fillStyle = color;
-        for (let i = 0; i < 8; i++) {
-          ctx.beginPath();
-          ctx.rotate((Math.PI * 2) / 8);
-          ctx.ellipse(25, 0, 30, 15, 0, 0, Math.PI * 2);
-          ctx.fill();
+        
+        // Petal layers for a richer look
+        for (let j = 0; j < 3; j++) {
+            ctx.fillStyle = j === 0 ? color : j === 1 ? color + 'DD' : color + 'BB';
+            const petals = 6 + j * 2;
+            const size = 20 - j * 4;
+            for (let i = 0; i < petals; i++) {
+              ctx.beginPath();
+              ctx.rotate((Math.PI * 2) / petals);
+              ctx.ellipse(size * 0.8, 0, size, size * 0.7, 0, 0, Math.PI * 2);
+              ctx.fill();
+            }
         }
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+        
+        ctx.fillStyle = '#FFD700'; // Center
+        ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       };
-      
-      // Top corner florals
-      drawDetailedFlower(80, 80, template.accentColor, 0.8);
-      drawDetailedFlower(width - 80, 80, template.accentColor, 0.8);
-      
-      // Bottom floral arrangement
-      for (let i = 0; i < 5; i++) {
-        drawDetailedFlower(150 + i * 125, height - 100, i % 2 === 0 ? template.accentColor : '#FAD7A0', 0.9);
+
+      const drawLeaf = (x: number, y: number, rotation: number, scale = 1) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#3E5622';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 18, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Vein
+        ctx.strokeStyle = '#2D3E19';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(15, 0); ctx.stroke();
+        ctx.restore();
+      };
+
+      if (template.id === 'lyakurwa_red_navy') {
+        // TOP RIGHT CLUSTER
+        const trX = width - 120;
+        const trY = 120;
+        drawLeaf(trX - 60, trY - 40, -0.6, 1.8);
+        drawLeaf(trX + 30, trY + 60, 0.4, 1.3);
+        drawRose(trX, trY, '#A11515', 2.0, 0); 
+        drawRose(trX - 50, trY + 50, '#FDF5E6', 1.4, 0.4); 
+        drawRose(trX + 40, trY - 30, '#8B0000', 1.1, -0.2);
+
+        // BOTTOM LEFT CLUSTER
+        const blX = 120;
+        const blY = height - 120;
+        drawLeaf(blX + 60, blY + 40, 0.3, 1.6);
+        drawRose(blX, blY, '#A11515', 1.8, 0);
+        drawRose(blX + 50, blY - 40, '#FFDAB9', 1.2, -0.5);
+      } else {
+        drawRose(100, 100, template.accentColor, 1.2);
+        drawRose(width - 100, 100, template.accentColor, 1.2);
       }
     }
 
-    // 3. Ornate Border
-    if (template.borderStyle === 'ornate') {
-      ctx.strokeStyle = template.primaryColor;
-      ctx.lineWidth = 15;
-      ctx.strokeRect(30, 30, width - 60, height - 60);
-      ctx.lineWidth = 2;
-      ctx.strokeRect(55, 55, width - 110, height - 110);
-      
-      // Corner accents
-      const sz = 80;
-      ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.moveTo(30, 30+sz); ctx.lineTo(30, 30); ctx.lineTo(30+sz, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(width-30-sz, 30); ctx.lineTo(width-30, 30); ctx.lineTo(width-30, 30+sz); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(30, height-30-sz); ctx.lineTo(30, height-30); ctx.lineTo(30+sz, height-30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(width-30-sz, height-30); ctx.lineTo(width-30, height-30); ctx.lineTo(width-30, height-30-sz); ctx.stroke();
-    }
-
-    // 4. Dynamic Text Content
+    // 4. Text Content
     ctx.textAlign = 'center';
     
-    // Dynamic Header (Host Info) - Multi-line support
-    ctx.fillStyle = template.id === 'royal_purple' ? '#AAA' : '#555';
-    ctx.font = `italic 18px ${template.fontFamily}`;
-    const hostLines = (details.hostNames || "").split('\n');
-    hostLines.forEach((line, idx) => {
-      ctx.fillText(line, width / 2, 100 + idx * 24);
-    });
-
-    // Event Type Title
+    // Main Title
     ctx.fillStyle = template.secondaryColor;
-    ctx.font = `bold 42px ${template.fontFamily}`;
-    ctx.fillText(details.eventTitle || "Mwaliko", width / 2, 220);
+    ctx.font = `bold 62px ${template.fontFamily}`;
+    const titleText = details.eventTitle || "Mwaliko wa harusi";
+    const titleY = 210;
+    ctx.fillText(titleText, width / 2, titleY);
 
-    // Celebrant Names
-    ctx.fillStyle = template.primaryColor;
-    ctx.font = `bold 65px ${template.fontFamily}`;
-    ctx.fillText(details.names || "Selestino & Victoria", width / 2, 380);
-
-    // Details Block
-    ctx.fillStyle = template.id === 'royal_purple' ? '#FFF' : '#2C3E50';
-    ctx.font = `bold 34px ${template.fontFamily}`;
-    ctx.fillText(details.date || "Date", width / 2, 490);
-    ctx.font = `24px ${template.fontFamily}`;
-    ctx.fillText(details.time || "Time", width / 2, 530);
-
-    // Venue
-    ctx.fillStyle = template.accentColor;
-    ctx.font = `bold 28px ${template.fontFamily}`;
-    ctx.fillText(details.venue || "PTA HALL", width / 2, 620);
-
-    // Dress Code
-    if (details.dressCode) {
-      ctx.fillStyle = template.id === 'royal_purple' ? '#DDD' : '#7F8C8D';
-      ctx.font = `bold 20px ${template.fontFamily}`;
-      ctx.fillText("DRESS CODE: " + details.dressCode.toUpperCase(), width / 2, 700);
-    }
-
-    // --- Ticket Badge (Visual Check-in) ---
-    const badgeX = width - 150;
-    const badgeY = 220;
+    // TICKET BADGE POSITION REFINEMENT
+    // Placed as a neat floating pill above the main title to ensure no text overlap
     ctx.save();
-    ctx.fillStyle = (guest.ticketType === 'VIP' || guest.ticketType === 'VVIP') ? '#D4AC0D' : '#2C3E50';
+    const badgeX = width / 2;
+    const badgeY = titleY - 85;
+    ctx.fillStyle = (guest.ticketType === 'VIP' || guest.ticketType === 'VVIP') ? '#D4AC0D' : '#1A237E';
     ctx.beginPath();
-    ctx.roundRect(badgeX - 65, badgeY - 22, 130, 44, 12);
+    ctx.roundRect(badgeX - 50, badgeY - 18, 100, 36, 18);
     ctx.fill();
     ctx.fillStyle = '#FFF';
-    ctx.font = `bold 18px sans-serif`;
-    ctx.fillText(guest.ticketType.toUpperCase(), badgeX, badgeY + 7);
+    ctx.font = `bold 14px sans-serif`;
+    ctx.fillText(guest.ticketType.toUpperCase(), badgeX, badgeY + 5);
     ctx.restore();
 
-    // Personal Guest Name
-    if (guest.guestName) {
-      ctx.fillStyle = template.id === 'royal_purple' ? '#EEE' : '#333';
-      ctx.font = `italic bold 22px ${template.fontFamily}`;
-      ctx.fillText(`Mgeni: ${guest.guestName}`, width / 2, 780);
+    // Hosts
+    ctx.fillStyle = '#212121';
+    ctx.font = `bold 22px ${template.fontFamily}`;
+    const hostLines = (details.hostNames || "").split('\n');
+    hostLines.forEach((l, i) => ctx.fillText(l, width / 2, 290 + i * 28));
+
+    // Celebrants
+    ctx.fillStyle = template.primaryColor;
+    ctx.font = `bold 68px ${template.fontFamily}`;
+    const nameLines = (details.names || "").split('\n');
+    nameLines.forEach((l, i) => ctx.fillText(l, width / 2, 460 + i * 65));
+
+    // Venue & Location
+    ctx.fillStyle = '#212121';
+    ctx.font = `bold 26px ${template.fontFamily}`;
+    ctx.fillText(details.venue, width / 2, 690);
+    ctx.font = `italic 22px ${template.fontFamily}`;
+    ctx.fillText(details.additionalInfo, width / 2, 730);
+
+    // Contact
+    if (details.contact) {
+      ctx.fillStyle = template.primaryColor;
+      ctx.font = `bold 28px ${template.fontFamily}`;
+      ctx.fillText("Mawasiliano", width / 2, 890);
+      ctx.font = `bold 24px sans-serif`;
+      ctx.fillText(details.contact, width / 2, 930);
     }
 
-    // Unique Identification Footer
+    // Guest name
+    if (guest.guestName) {
+      ctx.fillStyle = '#333';
+      ctx.font = `italic bold 22px ${template.fontFamily}`;
+      ctx.fillText(`Mgeni: ${guest.guestName}`, width / 2, 830);
+    }
+
+    // Footer
     ctx.fillStyle = '#95A5A6';
+    ctx.font = `italic 16px ${template.fontFamily}`;
+    ctx.fillText(details.instruction || "Skani kadi hii kwa ajili ya kuingilia ukumbini", width / 2, height - 150);
     ctx.font = `bold 14px monospace`;
-    ctx.fillText(`UNIQUE ID: ${guest.uniqueId}`, width / 2, height - 60);
-    ctx.font = `italic 14px ${template.fontFamily}`;
-    ctx.fillText("Skani kadi hii kwa ajili ya kuingilia ukumbini", width / 2, height - 180);
+    ctx.fillText(`ID: ${guest.uniqueId}`, width / 2, height - 40);
 
   }, [template, details, guest, width, height]);
 
-  return <canvas ref={canvasRef} className="max-w-full h-auto rounded-lg shadow-2xl border border-slate-700 bg-white" />;
+  return <canvas ref={effectiveRef} className="max-w-full h-auto rounded-lg shadow-2xl bg-white" />;
 };
 
 export default TemplateRenderer;
