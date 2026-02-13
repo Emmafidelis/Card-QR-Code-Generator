@@ -21,9 +21,11 @@ const TEMPLATES: CardTemplate[] = [
 
 const PORTFOLIO_SAMPLES = [
   { names: "Fatuma & Juma", type: "Wedding", venue: "Mlimani City Hall", date: "15 JULY 2025" },
-  { names: "Afrikacha Gala", type: "Corporate", venue: "Serena Hotel", date: "02 OCT 2025" },
+  { names: "Afrikacha House Gala", type: "Corporate", venue: "Serena Hotel", date: "02 OCT 2025" },
   { names: "Neema's Send-off", type: "Ceremony", venue: "Diamond Jubilee", date: "20 DEC 2025" }
 ];
+
+const SITE_URL = 'https://afrikacha.tz';
 
 const generateId = () => `AFK-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
 
@@ -87,7 +89,6 @@ const LivePreviewCard: React.FC<{ template: CardTemplate, sample: typeof PORTFOL
 
 const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'editor'>('home');
-  const [isOwner, setIsOwner] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [password, setPassword] = useState('');
   
@@ -105,7 +106,7 @@ const App: React.FC = () => {
 
   const finalQRContent = useMemo(() => {
     if (!config.autoFormat) return config.content;
-    return `AFRIKACHA | ID:${guest.uniqueId} | T:${guest.ticketType} | N:${guest.guestName || 'GUEST'} | E:${details.names}`;
+    return `AFRIKACHA HOUSE | ID:${guest.uniqueId} | T:${guest.ticketType} | N:${guest.guestName || 'GUEST'} | E:${details.names}`;
   }, [config.autoFormat, config.content, guest, details]);
 
   useEffect(() => {
@@ -116,6 +117,46 @@ const App: React.FC = () => {
       return () => clearTimeout(timeout);
     }
   }, [selectedTemplate, details, guest]);
+
+  useEffect(() => {
+    const isHomeView = view === 'home';
+    const title = isHomeView
+      ? 'Afrikacha House | QR Event Invitation Generator Tanzania'
+      : 'Afrikacha House Editor | QR Invitation Designer';
+    const description = isHomeView
+      ? 'Afrikacha House creates secure QR-based digital invitations for weddings, galas, and corporate events in Tanzania.'
+      : 'Design and export secure QR invitation cards with the Afrikacha House editor.';
+    const robots = isHomeView
+      ? 'index, follow, max-image-preview:large'
+      : 'noindex, nofollow';
+
+    const upsertMeta = (attr: 'name' | 'property', key: string, value: string) => {
+      let tag = document.head.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute(attr, key);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', value);
+    };
+
+    let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = `${SITE_URL}/`;
+
+    document.title = title;
+    upsertMeta('name', 'description', description);
+    upsertMeta('name', 'robots', robots);
+    upsertMeta('property', 'og:title', title);
+    upsertMeta('property', 'og:description', description);
+    upsertMeta('property', 'og:url', `${SITE_URL}/`);
+    upsertMeta('name', 'twitter:title', title);
+    upsertMeta('name', 'twitter:description', description);
+  }, [view]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -136,7 +177,7 @@ const App: React.FC = () => {
     const canvas = exportCanvasRef.current;
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = `Afrikacha_Ticket_${guest.uniqueId}.png`;
+    link.download = `Afrikacha_House_Ticket_${guest.uniqueId}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
@@ -162,8 +203,7 @@ const App: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'Afrikacha2025') {
-      setIsOwner(true);
+    if (password === 'AfrikachaHouse2025') {
       setShowLogin(false);
       setView('editor');
     } else {
@@ -174,24 +214,33 @@ const App: React.FC = () => {
   if (view === 'home') {
     return (
       <div className="min-h-screen bg-[#020617] text-white selection:bg-orange-500/30">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded-md">
+          Skip to main content
+        </a>
         <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
+              aria-label="Go to top of page"
+              className="flex items-center gap-3 cursor-pointer"
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
                 <QrCode className="text-white w-6 h-6" />
               </div>
-              <span className="text-2xl font-black tracking-tighter uppercase italic">Afrikacha</span>
-            </div>
+              <span className="text-2xl font-black tracking-tighter uppercase italic">Afrikacha House</span>
+            </button>
             <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-slate-400">
-              <button onClick={() => scrollToId('portfolio')} className="hover:text-orange-500 transition-colors uppercase">Portfolio</button>
-              <button onClick={() => scrollToId('features')} className="hover:text-orange-500 transition-colors uppercase">Services</button>
-              <button onClick={() => scrollToId('contact')} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-lg shadow-orange-500/20 text-xs font-black uppercase tracking-widest">
+              <button type="button" onClick={() => scrollToId('portfolio')} className="hover:text-orange-500 transition-colors uppercase">Portfolio</button>
+              <button type="button" onClick={() => scrollToId('features')} className="hover:text-orange-500 transition-colors uppercase">Services</button>
+              <button type="button" onClick={() => scrollToId('contact')} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-lg shadow-orange-500/20 text-xs font-black uppercase tracking-widest">
                 Contact for Design
               </button>
             </div>
           </div>
         </nav>
 
+        <main id="main-content">
         <section className="pt-48 pb-20 px-6">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
@@ -207,6 +256,7 @@ const App: React.FC = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-6 pt-4">
                 <button 
+                  type="button"
                   onClick={() => scrollToId('portfolio')}
                   className="group flex items-center justify-center gap-3 bg-white text-black px-10 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm hover:bg-orange-500 hover:text-white transition-all shadow-2xl active:scale-95"
                 >
@@ -242,7 +292,7 @@ const App: React.FC = () => {
                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Exclusively designed for high-end events in Tanzania.</p>
                 </div>
                 <div className="w-full md:w-auto">
-                   <p className="text-slate-400 max-w-sm text-sm italic">Below are real examples of the secure digital invitations we produce in our studio.</p>
+                   <p className="text-slate-400 max-w-sm text-sm italic">Below are real examples of the secure digital invitations we produce at Afrikacha House.</p>
                 </div>
              </div>
 
@@ -311,7 +361,7 @@ const App: React.FC = () => {
                  </div>
                  <div className="flex flex-col items-center gap-2">
                     <Instagram className="w-8 h-8 text-orange-500" />
-                    <span className="text-xs font-black uppercase tracking-widest">@afrikacha_studio</span>
+                    <span className="text-xs font-black uppercase tracking-widest">@afrikacha_house</span>
                  </div>
               </div>
               <a href="https://wa.me/255718710901" target="_blank" rel="noopener noreferrer" className="inline-block bg-orange-500 text-white px-16 py-8 rounded-full font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all">
@@ -319,16 +369,19 @@ const App: React.FC = () => {
               </a>
            </div>
         </section>
+        </main>
 
         <footer className="py-12 border-t border-white/5 bg-black/40 px-6">
            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
               <div className="flex items-center gap-3 grayscale opacity-50">
                 <QrCode className="w-6 h-6" />
-                <span className="text-lg font-black tracking-tighter uppercase italic">Afrikacha</span>
+                <span className="text-lg font-black tracking-tighter uppercase italic">Afrikacha House</span>
               </div>
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5em]">&copy; 2025 Afrikacha Studio • Dar es Salaam</p>
+              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5em]">&copy; 2025 Afrikacha House • Dar es Salaam</p>
               <button 
+                type="button"
                 onClick={() => setShowLogin(true)}
+                aria-label="Open owner login form"
                 className="text-[9px] font-black uppercase tracking-widest text-slate-800 hover:text-slate-600 transition-colors flex items-center gap-2"
               >
                 <Lock className="w-3 h-3" /> Owner Login
@@ -337,10 +390,10 @@ const App: React.FC = () => {
         </footer>
 
         {showLogin && (
-          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="owner-login-title">
              <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[48px] p-10 space-y-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8">
-                  <button onClick={() => setShowLogin(false)} className="text-slate-500 hover:text-white transition-colors">
+                  <button type="button" onClick={() => setShowLogin(false)} aria-label="Close owner login dialog" className="text-slate-500 hover:text-white transition-colors">
                     <Trash2 className="w-6 h-6" />
                   </button>
                 </div>
@@ -348,23 +401,26 @@ const App: React.FC = () => {
                   <div className="w-16 h-16 bg-orange-500 rounded-3xl flex items-center justify-center mx-auto shadow-2xl">
                     <ShieldCheck className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-black text-center uppercase tracking-tighter">Owner Access Only</h3>
-                  <p className="text-center text-slate-500 text-sm">Please verify your identity to enter the Afrikacha Studio Workspace.</p>
+                  <h3 id="owner-login-title" className="text-2xl font-black text-center uppercase tracking-tighter">Owner Access Only</h3>
+                  <p className="text-center text-slate-500 text-sm">Please verify your identity to enter the Afrikacha House Workspace.</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-2">Access Key</label>
+                     <label htmlFor="access-key" className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-2">Access Key</label>
                      <input 
+                       id="access-key"
                        type="password" 
                        value={password}
                        onChange={(e) => setPassword(e.target.value)}
+                       autoComplete="current-password"
+                       required
                        autoFocus
                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white outline-none focus:border-orange-500 transition-all font-mono" 
                        placeholder="••••••••"
                      />
                   </div>
                   <button type="submit" className="w-full bg-white text-black py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-500 hover:text-white transition-all shadow-xl flex items-center justify-center gap-3">
-                    <LogIn className="w-4 h-4" /> Unlock Studio
+                    <LogIn className="w-4 h-4" /> Unlock House
                   </button>
                 </form>
                 <p className="text-center text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">Authorized Personnel Only</p>
@@ -379,22 +435,27 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#020617] flex flex-col selection:bg-orange-500/30">
       <header className="border-b border-white/5 bg-[#020617]/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('home')}>
+          <button
+            type="button"
+            onClick={() => setView('home')}
+            aria-label="Back to homepage"
+            className="flex items-center gap-3 cursor-pointer"
+          >
             <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-rose-600 rounded-lg flex items-center justify-center">
               <QrCode className="text-white w-5 h-5" />
             </div>
-            <span className="text-xl font-black tracking-tighter uppercase italic">Afrikacha</span>
-          </div>
+            <span className="text-xl font-black tracking-tighter uppercase italic">Afrikacha House</span>
+          </button>
 
           <div className="flex items-center gap-4">
             <div className="px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
                <ShieldCheck className="w-3 h-3" /> Owner Mode
             </div>
-            <button onClick={handleDownload} className="flex items-center gap-2 bg-white text-black hover:bg-orange-500 hover:text-white px-5 py-2 rounded-full font-black transition-all shadow-lg active:scale-95 text-[10px] uppercase tracking-widest">
+            <button type="button" onClick={handleDownload} className="flex items-center gap-2 bg-white text-black hover:bg-orange-500 hover:text-white px-5 py-2 rounded-full font-black transition-all shadow-lg active:scale-95 text-[10px] uppercase tracking-widest">
               <Download className="w-4 h-4" />
               <span>Export Card</span>
             </button>
-            <button onClick={resetAll} className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+            <button type="button" onClick={resetAll} aria-label="Reset all editor data" className="p-2 text-slate-500 hover:text-red-400 transition-colors">
               <Trash2 className="w-5 h-5" />
             </button>
           </div>
@@ -402,11 +463,12 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-10 grid lg:grid-cols-12 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <h1 className="sr-only">Afrikacha House Editor</h1>
         <div className="lg:col-span-7 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
               <Zap className="w-5 h-5 text-orange-400" />
-              Studio Editor
+              House Editor
             </h2>
           </div>
           
@@ -439,7 +501,7 @@ const App: React.FC = () => {
           <div className="bg-slate-900/90 border border-white/10 rounded-[48px] overflow-hidden shadow-2xl sticky top-24 backdrop-blur-2xl">
             <div className="flex bg-white/5 p-1.5 m-4 rounded-2xl">
               {['templates', 'details', 'ticket', 'qr'].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab as any)}
+                <button key={tab} type="button" onClick={() => setActiveTab(tab as any)} aria-pressed={activeTab === tab}
                   className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}>
                   {tab}
                 </button>
@@ -449,8 +511,11 @@ const App: React.FC = () => {
             <div className="p-8 max-h-[55vh] overflow-y-auto custom-scrollbar space-y-6">
               {activeTab === 'templates' ? (
                 <div className="space-y-6">
-                   <div 
+                   <input id="template-upload" type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                   <button 
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
+                    aria-label="Upload a paper invitation image"
                     className="w-full flex items-center justify-between p-6 rounded-[32px] border border-slate-700 bg-slate-800/40 hover:bg-slate-800 transition-all group cursor-pointer"
                    >
                       <div className="flex items-center gap-4">
@@ -460,13 +525,12 @@ const App: React.FC = () => {
                           <p className="text-[9px] text-slate-500 uppercase font-black">Image Upload</p>
                         </div>
                       </div>
-                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                   </div>
+                   </button>
 
                    <div className="space-y-3">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Studio Presets</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">House Presets</p>
                       {TEMPLATES.map(t => (
-                        <button key={t.id} onClick={() => {setSelectedTemplate(t); setImage(null);}}
+                        <button type="button" key={t.id} onClick={() => {setSelectedTemplate(t); setImage(null);}}
                           className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all ${selectedTemplate?.id === t.id ? 'bg-orange-500/10 border-orange-500/50 text-orange-400' : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
                           <div className="flex items-center gap-4">
                             <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${t.bgGradient} flex items-center justify-center opacity-40 shadow-xl`}>
@@ -482,23 +546,23 @@ const App: React.FC = () => {
               ) : activeTab === 'details' ? (
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Header (Host Info)</label>
-                    <textarea value={details.hostNames} onChange={e => setDetails({...details, hostNames: e.target.value})}
+                    <label htmlFor="details-host" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Header (Host Info)</label>
+                    <textarea id="details-host" value={details.hostNames} onChange={e => setDetails({...details, hostNames: e.target.value})}
                       className="w-full bg-slate-950 border border-slate-800 rounded-3xl px-6 py-5 text-white text-xs leading-relaxed outline-none focus:border-orange-500 min-h-[120px] transition-all" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Main Celebrants</label>
-                    <input type="text" value={details.names} onChange={e => setDetails({...details, names: e.target.value})}
+                    <label htmlFor="details-names" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Main Celebrants</label>
+                    <input id="details-names" type="text" value={details.names} onChange={e => setDetails({...details, names: e.target.value})}
                       className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:border-orange-500" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Date</label>
-                      <input type="text" value={details.date} onChange={e => setDetails({...details, date: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none" />
+                      <label htmlFor="details-date" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Date</label>
+                      <input id="details-date" type="text" value={details.date} onChange={e => setDetails({...details, date: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Time</label>
-                      <input type="text" value={details.time} onChange={e => setDetails({...details, time: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none" />
+                      <label htmlFor="details-time" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Time</label>
+                      <input id="details-time" type="text" value={details.time} onChange={e => setDetails({...details, time: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none" />
                     </div>
                   </div>
                 </div>
@@ -511,15 +575,15 @@ const App: React.FC = () => {
                      </div>
                      <div className="space-y-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-600 uppercase">Guest To Print</label>
-                          <input type="text" value={guest.guestName} onChange={e => setGuest({...guest, guestName: e.target.value})} 
+                          <label htmlFor="ticket-guest-name" className="text-[10px] font-black text-slate-600 uppercase">Guest To Print</label>
+                          <input id="ticket-guest-name" type="text" value={guest.guestName} onChange={e => setGuest({...guest, guestName: e.target.value})} 
                             className="w-full bg-black border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs outline-none focus:border-orange-500" placeholder="e.g. Salim Bakari" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-600 uppercase">Tier Level</label>
+                          <p className="text-[10px] font-black text-slate-600 uppercase">Tier Level</p>
                           <div className="grid grid-cols-2 gap-3">
                             {['Single', 'Double', 'VIP', 'VVIP'].map(t => (
-                              <button key={t} onClick={() => setGuest({...guest, ticketType: t as TicketType})}
+                              <button type="button" key={t} onClick={() => setGuest({...guest, ticketType: t as TicketType})} aria-pressed={guest.ticketType === t}
                                 className={`py-5 rounded-2xl text-[10px] font-black uppercase border transition-all ${guest.ticketType === t ? 'bg-orange-500 border-orange-500 text-white shadow-xl scale-[1.02]' : 'bg-black border-slate-800 text-slate-600 hover:border-slate-700'}`}>
                                 {t}
                               </button>
@@ -531,7 +595,7 @@ const App: React.FC = () => {
                              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Security Hash</p>
                              <p className="text-sm font-mono text-orange-500 font-bold">{guest.uniqueId}</p>
                            </div>
-                           <button onClick={() => setGuest({...guest, uniqueId: generateId()})} className="p-4 bg-slate-900 rounded-2xl text-slate-400 hover:text-white transition-all active:rotate-180 duration-500">
+                           <button type="button" onClick={() => setGuest({...guest, uniqueId: generateId()})} aria-label="Generate new security hash" className="p-4 bg-slate-900 rounded-2xl text-slate-400 hover:text-white transition-all active:rotate-180 duration-500">
                              <RefreshCcw className="w-5 h-5" />
                            </button>
                         </div>
@@ -541,8 +605,8 @@ const App: React.FC = () => {
               ) : (
                 <div className="space-y-8">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">QR Scale</label>
-                    <input type="range" min="40" max="350" step="5" value={config.size}
+                    <label htmlFor="qr-scale" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">QR Scale</label>
+                    <input id="qr-scale" type="range" min="40" max="350" step="5" value={config.size}
                       onChange={(e) => setConfig(prev => ({ ...prev, size: parseInt(e.target.value) }))}
                       className="w-full accent-orange-500 h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer" />
                   </div>
@@ -557,7 +621,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="p-8 border-t border-white/10 bg-black/20">
-               <button onClick={handleDownload} className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.3em] text-[10px] rounded-[32px] shadow-2xl hover:bg-orange-500 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-4">
+               <button type="button" onClick={handleDownload} className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.3em] text-[10px] rounded-[32px] shadow-2xl hover:bg-orange-500 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-4">
                  <Download className="w-5 h-5" /> Generate & Export
                </button>
             </div>

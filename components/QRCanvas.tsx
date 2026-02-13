@@ -78,6 +78,26 @@ const QRCanvas: React.FC<QRCanvasProps> = ({ image, config, onPositionChange, ca
 
   const handleMouseUp = () => setIsDragging(false);
 
+  const getBoundedPosition = (nextX: number, nextY: number) => {
+    if (!containerRef.current) return { x: nextX, y: nextY };
+    const { width, height } = containerRef.current.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(nextX, width - config.size)),
+      y: Math.max(0, Math.min(nextY, height - config.size))
+    };
+  };
+
+  const handleOverlayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const baseStep = e.shiftKey ? 10 : 2;
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+
+    e.preventDefault();
+    const deltaX = e.key === 'ArrowRight' ? baseStep : e.key === 'ArrowLeft' ? -baseStep : 0;
+    const deltaY = e.key === 'ArrowDown' ? baseStep : e.key === 'ArrowUp' ? -baseStep : 0;
+    const bounded = getBoundedPosition(config.posX + deltaX, config.posY + deltaY);
+    onPositionChange(bounded.x, bounded.y);
+  };
+
   return (
     <div className="relative w-full max-w-2xl mx-auto bg-slate-800 rounded-xl overflow-hidden shadow-2xl border border-slate-700">
       <div 
@@ -105,6 +125,11 @@ const QRCanvas: React.FC<QRCanvasProps> = ({ image, config, onPositionChange, ca
             zIndex: 10
           }}
           onMouseDown={handleMouseDown}
+          onKeyDown={handleOverlayKeyDown}
+          tabIndex={0}
+          role="button"
+          aria-label="QR code positioner. Drag with mouse or use arrow keys to move."
+          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Shift+ArrowUp Shift+ArrowDown Shift+ArrowLeft Shift+ArrowRight"
         >
           <QRCodeCanvas
             id="qr-preview"
