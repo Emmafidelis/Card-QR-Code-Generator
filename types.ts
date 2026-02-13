@@ -1,14 +1,11 @@
 
 export interface EventDetails {
   names: string;
-  date: string;
-  time: string;
-  venue: string;
+  ceremonyText: string;
   locationUrl: string;
   contact: string;
   dressCode: string;
   eventTitle: string;
-  additionalInfo: string;
   hostNames: string;
   instruction: string;
 }

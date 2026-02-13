@@ -21,9 +21,24 @@ const TEMPLATES: CardTemplate[] = [
 ];
 
 const PORTFOLIO_SAMPLES = [
-  { names: "Mark & Glory", type: "Wedding", venue: "Grand Paradise", date: "14 FEB 2026" },
-  { names: "Fatuma & Juma", type: "Wedding", venue: "Mlimani City Hall", date: "15 JULY 2025" },
-  { names: "Afrikacha Gala", type: "Corporate", venue: "Serena Hotel", date: "02 OCT 2025" }
+  {
+    names: "Mark & Glory",
+    type: "Wedding",
+    venue: "Grand Paradise",
+    ceremonyText: "Misa takatifu ya ndoa itafanyika 14 FEB 2026 katika Ukumbi wa Grand Paradise."
+  },
+  {
+    names: "Fatuma & Juma",
+    type: "Wedding",
+    venue: "Mlimani City Hall",
+    ceremonyText: "Misa takatifu ya ndoa itafanyika 15 JULY 2025 katika Mlimani City Hall."
+  },
+  {
+    names: "Afrikacha Gala",
+    type: "Corporate",
+    venue: "Serena Hotel",
+    ceremonyText: "Tukio la kampuni litafanyika 02 OCT 2025 katika Serena Hotel."
+  }
 ];
 
 const generateId = () => `AFK-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
@@ -50,13 +65,10 @@ const DEFAULT_DETAILS: EventDetails = {
   eventTitle: "Mwaliko wa harusi",
   hostNames: "Familia ya Modest Lyakurwa wa Yombo Kilakala Dar es\nSalaam wanayo furaha kukualika/kuwaalika",
   names: "Mark M. Lyakurwa\n&\nGlory Prosper",
-  date: "14/02/2026",
-  time: "Saa 8:30 Alasiri",
-  venue: "Ukumbi wa Grand Paradise",
+  ceremonyText: "Misa takatifu ya ndoa itafanyika jumamosi 14/02/2026 saa 8:30 Alasiri katika kanisa katoliki la Mt. Karoli Lwanga Yombo dovya na baadae Tafrija fupi itakayofanyika katika Ukumbi wa Grand Paradise uliopo Mwisho wa lami Dar es salaam.",
   locationUrl: "https://maps.app.goo.gl/79UGeaJyx5YZQYTB9",
   contact: "0718710901",
   dressCode: "Mavazi ya Heshima",
-  additionalInfo: "Mwisho wa lami Dar es salaam.",
   instruction: "Skani kadi hii kwa ajili ya kuingilia ukumbini"
 };
 
@@ -228,7 +240,7 @@ const App: React.FC = () => {
                       <div className="absolute inset-0 scale-50 -translate-y-1/4 origin-center group-hover:scale-[0.52] transition-transform duration-700">
                         <TemplateRenderer 
                           template={t} 
-                          details={{...DEFAULT_DETAILS, names: PORTFOLIO_SAMPLES[idx].names, eventTitle: PORTFOLIO_SAMPLES[idx].type, venue: PORTFOLIO_SAMPLES[idx].venue, date: PORTFOLIO_SAMPLES[idx].date}} 
+                          details={{...DEFAULT_DETAILS, names: PORTFOLIO_SAMPLES[idx].names, eventTitle: PORTFOLIO_SAMPLES[idx].type, ceremonyText: PORTFOLIO_SAMPLES[idx].ceremonyText}} 
                           guest={{...DEFAULT_GUEST, guestName: "Sample Guest", uniqueId: "AFK-SAMPLE"}}
                           canvasRef={null as any}
                         />
@@ -427,12 +439,15 @@ const App: React.FC = () => {
                     <textarea value={details.names} onChange={e => setDetails({...details, names: e.target.value})}
                       className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white font-bold outline-none min-h-[100px]" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input type="text" value={details.date} onChange={e => setDetails({...details, date: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs" placeholder="Date" />
-                    <input type="text" value={details.time} onChange={e => setDetails({...details, time: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs" placeholder="Time" />
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Misa / Event Paragraph</label>
+                    <textarea
+                      value={details.ceremonyText}
+                      onChange={e => setDetails({...details, ceremonyText: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs leading-relaxed outline-none min-h-[130px]"
+                      placeholder="Misa takatifu ya ndoa ... (weka sentensi yote hapa)"
+                    />
                   </div>
-                  <input type="text" value={details.venue} onChange={e => setDetails({...details, venue: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs" placeholder="Place (Ukumbi)" />
-                  <input type="text" value={details.additionalInfo} onChange={e => setDetails({...details, additionalInfo: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs" placeholder="Location (Eneo)" />
                   <input type="text" value={details.contact} onChange={e => setDetails({...details, contact: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-white text-xs" placeholder="Contact (Mawasiliano)" />
                 </div>
               ) : activeTab === 'ticket' ? (

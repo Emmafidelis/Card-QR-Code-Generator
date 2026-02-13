@@ -106,6 +106,34 @@ const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, details, 
 
     // 4. Text Content
     ctx.textAlign = 'center';
+    const drawWrappedCenteredText = (
+      text: string,
+      startY: number,
+      maxWidth: number,
+      lineHeight: number,
+      maxLines = 6
+    ) => {
+      const words = (text || '').trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return startY;
+
+      const lines: string[] = [];
+      let currentLine = words[0];
+
+      for (let i = 1; i < words.length; i++) {
+        const testLine = `${currentLine} ${words[i]}`;
+        if (ctx.measureText(testLine).width > maxWidth) {
+          lines.push(currentLine);
+          currentLine = words[i];
+        } else {
+          currentLine = testLine;
+        }
+      }
+      lines.push(currentLine);
+
+      const safeLines = lines.slice(0, maxLines);
+      safeLines.forEach((line, idx) => ctx.fillText(line, width / 2, startY + idx * lineHeight));
+      return startY + (safeLines.length - 1) * lineHeight;
+    };
     
     // Main Title
     ctx.fillStyle = template.secondaryColor;
@@ -140,27 +168,27 @@ const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, details, 
     const nameLines = (details.names || "").split('\n');
     nameLines.forEach((l, i) => ctx.fillText(l, width / 2, 460 + i * 65));
 
-    // Venue & Location
+    // Ceremony paragraph
     ctx.fillStyle = '#212121';
-    ctx.font = `bold 26px ${template.fontFamily}`;
-    ctx.fillText(details.venue, width / 2, 690);
-    ctx.font = `italic 22px ${template.fontFamily}`;
-    ctx.fillText(details.additionalInfo, width / 2, 730);
+    ctx.font = `bold 22px ${template.fontFamily}`;
+    const ceremonyBottomY = drawWrappedCenteredText(details.ceremonyText, 700, width - 180, 34, 7);
+    const guestLabelY = Math.max(830, ceremonyBottomY + 70);
+    const contactTitleY = Math.max(890, guestLabelY + (guest.guestName ? 60 : 20));
 
     // Contact
     if (details.contact) {
       ctx.fillStyle = template.primaryColor;
       ctx.font = `bold 28px ${template.fontFamily}`;
-      ctx.fillText("Mawasiliano", width / 2, 890);
+      ctx.fillText("Mawasiliano", width / 2, contactTitleY);
       ctx.font = `bold 24px sans-serif`;
-      ctx.fillText(details.contact, width / 2, 930);
+      ctx.fillText(details.contact, width / 2, contactTitleY + 40);
     }
 
     // Guest name
     if (guest.guestName) {
       ctx.fillStyle = '#333';
       ctx.font = `italic bold 22px ${template.fontFamily}`;
-      ctx.fillText(`Mgeni: ${guest.guestName}`, width / 2, 830);
+      ctx.fillText(`Mgeni: ${guest.guestName}`, width / 2, guestLabelY);
     }
 
     // Footer
