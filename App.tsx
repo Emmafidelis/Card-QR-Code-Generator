@@ -10,7 +10,6 @@ import {
 import QRCanvas from './components/QRCanvas';
 import TemplateRenderer from './components/TemplateRenderer';
 import { EventDetails, QRConfig, CardTemplate, GuestDetails, TicketType } from './types';
-import { analyzeCardImage } from './services/geminiService';
 
 const TEMPLATES: CardTemplate[] = [
   { id: 'lyakurwa_red_navy', name: 'Lyakurwa Red & Navy', primaryColor: '#1A237E', secondaryColor: '#B71C1C', accentColor: '#D4AF37', fontFamily: 'serif', bgGradient: 'from-white to-slate-50', hasFlowers: true, borderStyle: 'none' },
@@ -72,7 +71,6 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<QRConfig>(DEFAULT_CONFIG);
   const [details, setDetails] = useState<EventDetails>(DEFAULT_DETAILS);
   const [guest, setGuest] = useState<GuestDetails>(DEFAULT_GUEST);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<'templates' | 'details' | 'ticket' | 'qr'>('templates');
   
   const templateCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -99,19 +97,12 @@ const App: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = async (event) => {
+      reader.onload = (event) => {
         const base64 = event.target?.result as string;
         setImage(base64);
         setSelectedTemplate(null);
         setView('editor');
-        setActiveTab('qr');
-        setIsAnalyzing(true);
-        const extracted = await analyzeCardImage(base64);
-        if (extracted) {
-          setDetails(prev => ({ ...prev, ...extracted }));
-          if (extracted.locationUrl) setConfig(prev => ({ ...prev, content: extracted.locationUrl, autoFormat: false }));
-        }
-        setIsAnalyzing(false);
+        setActiveTab('details');
       };
       reader.readAsDataURL(file);
     }
@@ -147,7 +138,7 @@ const App: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'Afrikacha2025') {
+    if (password === 'AfrikachaHouse2025') {
       setIsOwner(true);
       setShowLogin(false);
       setView('editor');
@@ -361,7 +352,6 @@ const App: React.FC = () => {
             <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
               <Zap className="w-5 h-5 text-orange-400" /> Studio Editor
             </h2>
-            {isAnalyzing && <div className="text-orange-400 animate-pulse text-[10px] font-black uppercase">AI Processing...</div>}
           </div>
           
           <div className="flex justify-center bg-slate-900/20 backdrop-blur-md p-6 rounded-[48px] border border-white/5 shadow-2xl relative">
@@ -405,7 +395,7 @@ const App: React.FC = () => {
                    <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center justify-between p-6 rounded-[32px] border border-slate-700 bg-slate-800/40 hover:bg-slate-800 transition-all">
                       <div className="flex items-center gap-4 text-left">
                         <ImageIcon className="w-10 h-10 text-orange-400" />
-                        <div><p className="text-sm font-black text-white uppercase tracking-tight">Digitize Paper Card</p><p className="text-[9px] text-slate-500 font-black">SCAN WITH AI</p></div>
+                        <div><p className="text-sm font-black text-white uppercase tracking-tight">Digitize Paper Card</p><p className="text-[9px] text-slate-500 font-black">UPLOAD IMAGE</p></div>
                       </div>
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
                    </button>
